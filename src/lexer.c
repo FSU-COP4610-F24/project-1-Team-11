@@ -5,7 +5,7 @@
 
 void show_display();
 void env_vars(tokenlist *tokens);
-
+void tilde_exp(tokenlist *tokens);
 int main()
 {
 	while (1) {
@@ -22,6 +22,8 @@ int main()
 		tokenlist *tokens = get_tokens(input);
 
 		env_vars(tokens);
+
+		tilde_exp(tokens);
 		for (int i = 0; i < tokens->size; i++) {
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
@@ -132,4 +134,27 @@ void env_vars(tokenlist *tokens) {
             }
         }
     }
+	//need to delete space still.
+}
+
+void tilde_exp(tokenlist *tokens)
+{
+	char * home = getenv("HOME"); //Needed to set a home pointer to the environment of home.
+	for(int i = 0; i < tokens->size;i++)//Traverse through the string of tokens.
+	{
+		if(tokens->items[0][0] == '~') //checks if there is a tilde first.
+		{
+			
+			if(tokens->items[0][1] == '/') //checks if there is a /
+			{
+				char * tilde_expansion = malloc(strlen(home)+ strlen(tokens->items[i])); //create new space in the heap that will fit the home expression and the directories after that.
+				strcpy(tilde_expansion,home);//copy over the home environment path to the tilde expression
+				strcat(tilde_expansion, tokens->items[i]+1); //need to concatenate the rest of the string to the tilde expression.
+				free(tokens->items[i]); //This will free this string space
+				tokens->items[i] = tilde_expansion;//this will copy over the tilde expression plus other conetents to the items string at i completely..
+			}
+
+			/////STILL NEED to delete space for tilde_expansion
+		}
+	}
 }
