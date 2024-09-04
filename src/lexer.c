@@ -137,6 +137,7 @@ void env_vars(tokenlist *tokens) {
 	//need to delete space still.
 }
 
+
 void tilde_exp(tokenlist *tokens)
 {
 	char * home = getenv("HOME"); //Needed to set a home pointer to the environment of home.
