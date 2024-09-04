@@ -116,7 +116,7 @@ void show_display()
 /*The point of this function is to expand the variable of a token whenever it receives input from the user.
 	- In order to complete this we had to pass in the tokens based on the input.
 	- Then we needed to create pointers to both the name and the getenv of the name
-	- Then we needed to created space of the string and string copy was performed to copy over then token value string to
+	- Then we needed to create space of the string and string copy was performed to copy over, then token value string to
 	  the token->item string
 	*/
 void env_vars(tokenlist *tokens) {
@@ -146,16 +146,14 @@ void tilde_exp(tokenlist *tokens)
 		if(tokens->items[0][0] == '~') //checks if there is a tilde first.
 		{
 			
-			if(tokens->items[0][1] == '/') //checks if there is a /
-			{
+			
 				char * tilde_expansion = malloc(strlen(home)+ strlen(tokens->items[i])); //create new space in the heap that will fit the home expression and the directories after that.
 				strcpy(tilde_expansion,home);//copy over the home environment path to the tilde expression
 				strcat(tilde_expansion, tokens->items[i]+1); //need to concatenate the rest of the string to the tilde expression.
 				free(tokens->items[i]); //This will free this string space
 				tokens->items[i] = tilde_expansion;//this will copy over the tilde expression plus other conetents to the items string at i completely..
-			}
+		}
 
 			/////STILL NEED to delete space for tilde_expansion
-		}
 	}
 }
