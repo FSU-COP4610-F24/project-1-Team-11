@@ -134,7 +134,7 @@ void env_vars(tokenlist *tokens) {
             }
         }
     }
-	//need to delete space still.
+	
 }
 
 
@@ -154,6 +154,6 @@ void tilde_exp(tokenlist *tokens)
 				tokens->items[i] = tilde_expansion;//this will copy over the tilde expression plus other conetents to the items string at i completely..
 		}
 
-			/////STILL NEED to delete space for tilde_expansion
 	}
+
 }
