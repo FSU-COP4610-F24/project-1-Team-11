@@ -143,7 +143,7 @@ void tilde_exp(tokenlist *tokens)
 	char * home = getenv("HOME"); //Needed to set a home pointer to the environment of home.
 	for(int i = 0; i < tokens->size;i++)//Traverse through the string of tokens.
 	{
-		if(tokens->items[0][0] == '~') //checks if there is a tilde first.
+		if(tokens->items[i][0] == '~') //checks if there is a tilde first.
 		{
 			
 			
