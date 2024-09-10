@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void show_display();
 void env_vars(tokenlist *tokens);
@@ -28,12 +29,17 @@ int main()
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
 
+		char *commandPath= path_search(tokens);
+		if(commandPath){
+			printf("%s\n", commandPath);
+			free(commandPath);
+		}elseprintf("Command not found\n");
+
+
 		free(input);
 		free_tokens(tokens);
 
-
 	}
-
 
 	return 0;
 }
@@ -157,3 +163,50 @@ void tilde_exp(tokenlist *tokens)
 	}
 
 }
+
+
+void path_search(tokenlist *tokens){
+	if(tokens->size==0){
+		return NULL;
+	}
+	char *command= tokens->items[0];
+	char *path= getenv("PATH");
+	
+	char *copiedPath= malloc(strlen(path)+1);
+	strcpy(copiedPath, path);
+	
+
+	char *directory=strtok(path,":");
+	char *fullPath= NULL;
+
+
+	while(directory !=NULL){
+		
+		fullPath= malloc(strlen(directory)+ strlen(command)+2);
+		
+		if (!fullPath){
+			free(copiedPath);
+			return fullPath;
+		}
+
+		if (fullPath !=NULL){
+			strcpy(fullPath,directory);
+			strcat(fullPath, "/");
+			strcat(fullPath, command);
+
+		}
+
+		if(access(fullPath, X_OK)== 0){
+			free(copiedPath);
+			return fullPath;
+		}
+
+		free(fullPath);
+		fullPath=NULL;
+		directory=strtok(NULL,":");
+		}
+
+	free(copiedPath);
+	return NULL;
+	}
+	
