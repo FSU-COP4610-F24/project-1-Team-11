@@ -7,6 +7,7 @@
 void show_display();
 void env_vars(tokenlist *tokens);
 void tilde_exp(tokenlist *tokens);
+char * path_search(tokenlist *tokens);
 int main()
 {
 	while (1) {
