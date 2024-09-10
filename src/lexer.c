@@ -30,12 +30,13 @@ int main()
 		}
 
 		char *commandPath= path_search(tokens);
+
 		if(commandPath){
 			printf("%s\n", commandPath);
 			free(commandPath);
-		}elseprintf("Command not found\n");
-
-
+		}else{
+			printf("Command not found\n");
+		}
 		free(input);
 		free_tokens(tokens);
 
@@ -165,7 +166,7 @@ void tilde_exp(tokenlist *tokens)
 }
 
 
-void path_search(tokenlist *tokens){
+char *path_search(tokenlist *tokens){
 	if(tokens->size==0){
 		return NULL;
 	}
