@@ -29,8 +29,9 @@ int main()
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
 
-		char *commandPath= path_search(tokens);
+		char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
 
+		//Need an if else statement to check if the command exist or not.
 		if(commandPath){
 			printf("%s\n", commandPath);
 			free(commandPath);
@@ -165,49 +166,48 @@ void tilde_exp(tokenlist *tokens)
 
 }
 
-
-char *path_search(tokenlist *tokens){
-	if(tokens->size==0){
-		return NULL;
-	}
-	char *command= tokens->items[0];
-	char *path= getenv("PATH");
+/*For this function we needed to traverse through the $PATH command to search if a specific command when the token
+has an input */
+char *path_search(tokenlist *tokens){ 
 	
-	char *copiedPath= malloc(strlen(path)+1);
+	char *command= tokens->items[0]; //Create a pointer that points to the command
+	char *path= getenv("PATH"); // Create a pointer to the path.
+	
+	char *copiedPath= malloc(strlen(path)+1); //Allocates space for the path.
 	strcpy(copiedPath, path);
 	
 
-	char *directory=strtok(path,":");
+	char *directory=strtok(path,":"); //":" will separate the path.
 	char *fullPath= NULL;
 
 
-	while(directory !=NULL){
+	while(directory !=NULL){ //This will iterate over the path until it reaches null terminating char.
 		
-		fullPath= malloc(strlen(directory)+ strlen(command)+2);
+		fullPath= malloc(strlen(directory)+ strlen(command)+2); //add 2 for the "/" and the command once everything is strcat.
 		
 		if (!fullPath){
 			free(copiedPath);
 			return fullPath;
 		}
-
+		//This will copy the dir to the full path followed by the "/" and the command
 		if (fullPath !=NULL){
 			strcpy(fullPath,directory);
 			strcat(fullPath, "/");
 			strcat(fullPath, command);
 
 		}
-
-		if(access(fullPath, X_OK)== 0){
-			free(copiedPath);
-			return fullPath;
+		// checks if the command exist and is an executable.
+		if(access(fullPath, F_OK)== 0){
+			free(copiedPath); // free the path copy
+			return fullPath; // Return the dynamically allocated full path
 		}
-
+		// after I look at the contents of this directory. I need to free the memory and set it to Null for the next cycle.
 		free(fullPath);
 		fullPath=NULL;
 		directory=strtok(NULL,":");
 		}
 
-	free(copiedPath);
-	return NULL;
+	free(copiedPath);  //delete memory at the end of the search.
+	return NULL; //This will show that command is not found.
 	}
 	
