@@ -1,25 +1,3 @@
-/*
-
-
-example of output:
-potential memory leak??
-
-
-belaterraa@(null):/Users/belaterraa/Desktop/project-1-Team-11> ls -l
-whole input: ls -l
-token 0: (ls)
-token 1: (-l)
-/bin/ls
-belaterraa@(null):/Users/belaterraa/Desktop/project-1-Team-11> ls -l
-whole input: ls -l
-token 0: (ls)
-token 1: (-l)
-Command not found
-
-
-
-
-*/
 #include "lexer.h"
 #include <stdio.h>
 #include <stdlib.h>
