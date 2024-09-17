@@ -1,3 +1,21 @@
+/*
+
+example of output: 
+potential memory leak?? 
+
+belaterraa@(null):/Users/belaterraa/Desktop/project-1-Team-11> ls -l 
+whole input: ls -l 
+token 0: (ls)
+token 1: (-l)
+/bin/ls
+belaterraa@(null):/Users/belaterraa/Desktop/project-1-Team-11> ls -l
+whole input: ls -l
+token 0: (ls)
+token 1: (-l)
+Command not found
+
+
+*/
 #include "lexer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +25,9 @@
 void show_display();
 void env_vars(tokenlist *tokens);
 void tilde_exp(tokenlist *tokens);
-char * path_search(tokenlist *tokens);
+char *path_search(tokenlist *tokens);
+void execute_path(tokenlist *tokens);
+
 int main()
 {
 	while (1) {
@@ -30,11 +50,15 @@ int main()
 			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
 
-		char *commandPath= path_search(tokens);
+		char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
 
+		//Need an if else statement to check if the command exist or not.
 		if(commandPath){
-			printf("%s\n", commandPath);
+			printf("got into if statement");
+			
+			execute_path(tokens); //tried this as tokens already
 			free(commandPath);
+
 		}else{
 			printf("Command not found\n");
 		}
@@ -166,49 +190,91 @@ void tilde_exp(tokenlist *tokens)
 
 }
 
-
-char *path_search(tokenlist *tokens){
-	if(tokens->size==0){
-		return NULL;
-	}
-	char *command= tokens->items[0];
-	char *path= getenv("PATH");
+/*For this function we needed to traverse through the $PATH command to search if a specific command when the token
+has an input */
+char *path_search(tokenlist *tokens){ 
 	
-	char *copiedPath= malloc(strlen(path)+1);
+	char *command= tokens->items[0]; //Create a pointer that points to the command
+	char *path= getenv("PATH"); // Create a pointer to the path.
+	
+	char *copiedPath= malloc(strlen(path)+1); //Allocates space for the path.
 	strcpy(copiedPath, path);
-	
+	printf("copiedPath: %s", copiedPath);
 
-	char *directory=strtok(path,":");
+	char *directory=strtok(copiedPath,":"); //":" will separate the path.
 	char *fullPath= NULL;
 
 
-	while(directory !=NULL){
+	while(directory !=NULL){ //This will iterate over the path until it reaches null terminating char.
 		
-		fullPath= malloc(strlen(directory)+ strlen(command)+2);
+		fullPath= malloc(strlen(directory)+ strlen(command)+2); //add 2 for the "/" and the command once everything is strcat.
+		
 		
 		if (!fullPath){
 			free(copiedPath);
 			return fullPath;
 		}
-
+		//This will copy the dir to the full path followed by the "/" and the command
 		if (fullPath !=NULL){
 			strcpy(fullPath,directory);
 			strcat(fullPath, "/");
 			strcat(fullPath, command);
 
 		}
+		printf("fullPath: %s\n", fullPath);
 
-		if(access(fullPath, X_OK)== 0){
-			free(copiedPath);
-			return fullPath;
+		// checks if the command exist and is an executable.
+		if(access(fullPath, F_OK)== 0){
+			
+			free(copiedPath); // free the path copy
+			
+			return fullPath; // Return the dynamically allocated full path
 		}
-
+		// after I look at the contents of this directory. I need to free the memory and set it to Null for the next cycle.
 		free(fullPath);
 		fullPath=NULL;
 		directory=strtok(NULL,":");
 		}
 
-	free(copiedPath);
-	return NULL;
+	free(copiedPath);  //delete memory at the end of the search.
+	return NULL; //This will show that command is not found.
 	}
+	
+
+
+void execute_path(tokenlist *tokens){
+
+	char *fullPath= path_search(tokens);
+	int status;
+
+	pid_t pid = fork();
+			
+		if (pid==0){
+			
+
+			char *commands[tokens->size+1];
+			for(int i= 0; i<tokens->size; i++){
+				commands[i]=tokens-> items[i];
+			
+				}
+				commands[tokens->size]=NULL;
+				execv(fullPath, commands);
+
+
+
+			
+		}else if(pid>0){
+			waitpid(pid,&status,0);
+			
+		}else{
+			printf("Pid did not work");
+		}
+
+
+free(fullPath);
+}
+
+
+
+
 	
