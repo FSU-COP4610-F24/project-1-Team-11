@@ -303,10 +303,6 @@ void execute_path(tokenlist *tokens){
                execv(fullPath, commands);
 
 
-
-
-
-
           
        }else if(pid>0){
            waitpid(pid,&status,0);
