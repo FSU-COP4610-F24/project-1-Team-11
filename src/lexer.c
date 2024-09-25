@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
+#include <fcntl.h>
 
 
 void show_display();
@@ -12,7 +12,7 @@ void env_vars(tokenlist *tokens);
 void tilde_exp(tokenlist *tokens);
 char *path_search(tokenlist *tokens);
 void execute_path(tokenlist *tokens);
-
+void io_redirection(tokenlist *tokens);
 
 int main()
 {
@@ -47,8 +47,7 @@ int main()
 
        //Need an if else statement to check if the command exist or not.
        if(commandPath){
-           printf("got into if statement");
-          
+           
            execute_path(tokens); //tried this as tokens already
            free(commandPath);
 
@@ -56,6 +55,21 @@ int main()
        }else{
            printf("Command not found\n");
        }
+        bool io_redirection_checker = false;
+        for (int i = 0; i < tokens->size; i++) 
+        {
+            if (strcmp(tokens->items[i], "<") == 0 || strcmp(tokens->items[i], ">") == 0) 
+            {
+                io_redirection_checker = true;
+                
+            }
+        }
+
+if (io_redirection_checker == true) 
+{
+    io_redirection(tokens); 
+} 
+       
        free(input);
        free_tokens(tokens);
 
@@ -204,13 +218,17 @@ void tilde_exp(tokenlist *tokens)
 /*For this function we needed to traverse through the $PATH command to search if a specific command when the token
 has an input */
 char *path_search(tokenlist *tokens){
+    if(tokens->size == 0)
+    {
+        return NULL;
+    }
   
    char *command= tokens->items[0]; //Create a pointer that points to the command
    char *path= getenv("PATH"); // Create a pointer to the path.
   
    char *copiedPath= malloc(strlen(path)+1); //Allocates space for the path.
    strcpy(copiedPath, path);
-   printf("copiedPath: %s", copiedPath);
+   
 
 
    char *directory=strtok(copiedPath,":"); //":" will separate the path.
@@ -236,8 +254,6 @@ char *path_search(tokenlist *tokens){
 
 
        }
-       printf("fullPath: %s\n", fullPath);
-
 
        // checks if the command exist and is an executable.
        if(access(fullPath, F_OK)== 0){
@@ -296,5 +312,72 @@ void execute_path(tokenlist *tokens){
 
 free(fullPath);
 }
+void io_redirection(tokenlist *tokens)
+{
+    if(tokens -> size == 0)
+    {
+        return;
+    }
+    bool in_flag = false;
+    bool out_flag = false;
+    char * input_file = NULL;
+    char * output_file = NULL;
+    tokenlist * commands =  new_tokenlist();
 
+    for(int i = 0; i < tokens->size; i++) //traverse through tokens
+    {
+        if(strcmp(tokens->items[i],"<" )== 0) // check if there is an input symbol
+        {
+            in_flag = true; //set flag to true
+            input_file = tokens->items[++i]; //input pointer will point the input file
+        }
+        else if(strcmp(tokens->items[i],">")== 0) //check if there is an output symbol
+        {
+            out_flag = true; //set flag to true
+            output_file = tokens->items[++i]; //output pointer will point the output file
+        }
+        else
+        {
+            add_token(commands, tokens->items[i]); //add commands to a separate token list.
+        }
+    }
 
+    int pid = fork();
+    if(pid == 0)
+    {
+        if(in_flag == true)
+        {
+            int file_directory_input = open(input_file, O_RDONLY);
+            if(file_directory_input < 0)
+            {
+                printf("Error: the input file does not exist\n");
+                exit(EXIT_FAILURE); //exits if input file does not exist.
+            }
+            dup2(file_directory_input, STDIN_FILENO); //redirection of input
+            close(file_directory_input); //close input file descriptors
+        }
+        else if(out_flag == true)
+        {
+            int file_directory_input = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0600); //have create or overwrite and read/write permissions
+            if(file_directory_input < 0)
+            {
+                printf("Error: the input file does not exist\n");
+                exit(EXIT_FAILURE); //exits if input file does not exist.
+            }
+            dup2(file_directory_input, STDOUT_FILENO); //redirection of output
+            close(file_directory_input); //close input file descriptors
+            
+        }
+        execute_path(commands); //need to execute the command that is stored in the new token list
+        free_tokens(commands); //needs to free up the space.
+        exit(EXIT_SUCCESS); //exits whenever the process is sucessful.
+    }
+    
+    else if(pid > 0)
+    {
+        waitpid(pid,NULL,0);
+    }
+
+    free_tokens(commands);
+
+};
