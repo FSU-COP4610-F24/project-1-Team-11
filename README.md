@@ -1,67 +1,68 @@
 # Shell
 
-[Description]
+[This project is designed to help us understand how the operating system works as far as communication with the shell environment. We needed to create the prompt, expand variables, work with paths, execute commands and child processes, implement io redirection, piping, and background processes.]
 
 ## Group Members
-- **John Doe**: jd19@fsu.edu
-- **Jane Smith**: js19@fsu.edu
-- **Alex Brown**: ab19@fsu.edu
+- **Donald Walton**: djw21c@fsu.edu
+- **James Tanner**: jwt20@fsu.edu
+- **Isabela Terra**: irt21@fsu.edu
 ## Division of Labor
 
 ### Part 1: Prompt
-- **Responsibilities**: [Description]
-- **Assigned to**: John Doe
+- **Responsibilities**: [Create a funtion that will print out the prompt]
+- **Assigned to**: Donald Walton
 
 ### Part 2: Environment Variables
-- **Responsibilities**: [Description]
-- **Assigned to**: Jane Smith
+- **Responsibilities**: [Ceate a function that will expand the environment variables]
+- **Assigned to**: Donald Walton
+
 
 ### Part 3: Tilde Expansion
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown
+- **Responsibilities**: [Create a tilde expression function that will help expand the tilde]
+- **Assigned to**: Donald Walton, James Tanner
 
 ### Part 4: $PATH Search
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown, Jane Smith
+- **Responsibilities**: [Create a function that will search certain commands if it exist or not]
+- **Assigned to**: Donald Walton, Isabela Terra
 
 ### Part 5: External Command Execution
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown, Jane Smith
+- **Responsibilities**: [Create a function that will process and output external commands and child processes.]
+- **Assigned to**: Isabela Terra
 
-### Part 6: I/O Redirection
-- **Responsibilities**: [Description]
-- **Assigned to**: Jane Smith
+### Part 6: I/O Redirectionhn
+- **Responsibilities**: [Create a function that will implement IO redirection that will read/write/overwrite files]
+- **Assigned to**: Donald Walton
 
 ### Part 7: Piping
-- **Responsibilities**: [Description]
-- **Assigned to**: John Doe
+- **Responsibilities**: [Create a funtion that will implement piping and all the aspects of piping.]
+- **Assigned to**: James Tanner
 
 ### Part 8: Background Processing
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown, John Doe
+- **Responsibilities**: [Create a function that will implement background that is composed of both piping and IO redirection]
+- **Assigned to**: Isabela Terra
 
 ### Part 9: Internal Command Execution
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown
+- **Responsibilities**: [Create a function that will help with internal commands such as jobs, cd, and exit]
+- **Assigned  nm kk,l,.l0;89liukhj b  jknm n to**: Isabela Terra, James Tanner
 
 ### Part 10: External Timeout Executable
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown, Jane Smith
+- **Responsibilities**: [There is no part 10. I think it is extra credit]
+- **Assigned to**: 
 
 ### Extra Credit
-- **Responsibilities**: [Description]
-- **Assigned to**: Alex Brown
+- **Responsibilities**: [Create a function that will help improve unlimited piping, suppot piping and io redirection on one single command line, and execute shell within a running shell]
+- **Assigned to**: Donald Walton, James Tanner, Isabela Terra
 
 ## File Listing
 ```
 shell/
 │
 ├── src/
-│ ├── main.c
-│ └── shell.c
+│ ├── lexer.c
+│ 
 │
 ├── include/
-│ └── shell.h
+│ └── lexer.h
 │
 ├── README.md
 └── Makefile
