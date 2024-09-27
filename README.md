@@ -23,7 +23,7 @@
 
 ### Part 4: $PATH Search
 - **Responsibilities**: [Create a function that will search certain commands if it exist or not]
-- **Assigned to**: Donald Walton, Isabela Terra
+- **Assigned to**: Donald Walton
 
 ### Part 5: External Command Execution
 - **Responsibilities**: [Create a function that will process and output external commands and child processes.]
