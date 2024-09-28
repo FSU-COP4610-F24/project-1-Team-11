@@ -13,70 +13,71 @@ void tilde_exp(tokenlist *tokens);
 char *path_search(tokenlist *tokens);
 void execute_path(tokenlist *tokens);
 void io_redirection(tokenlist *tokens);
+void pip_execution(tokenlist *tokens);
 
 int main()
 {
    while (1) {
        show_display();
-
-
        printf("> ");
        /* input contains the whole command
         * tokens contains substrings from input split by spaces
         */
-
-
        char *input = get_input();
        printf("whole input: %s\n", input);
-
-
        tokenlist *tokens = get_tokens(input);
-
-
        env_vars(tokens);
-
-
        tilde_exp(tokens);
        for (int i = 0; i < tokens->size; i++) {
            printf("token %d: (%s)\n", i, tokens->items[i]);
        }
 
+        bool IO = false; //this is a checker for io redirection
+        bool pipe = false; //this is a checker for piping
 
-       char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
-
-
-       //Need an if else statement to check if the command exist or not.
-       if(commandPath){
-           
-           execute_path(tokens); //tried this as tokens already
-           free(commandPath);
-
-
-       }else{
-           printf("Command not found\n");
-       }
-        bool io_redirection_checker = false;
-        for (int i = 0; i < tokens->size; i++) 
+        for(int i = 0; i < tokens->size;i++)
         {
-            if (strcmp(tokens->items[i], "<") == 0 || strcmp(tokens->items[i], ">") == 0) 
+            if(strcmp(tokens->items[i], "<") == 0)
             {
-                io_redirection_checker = true;
-                
+                IO = true;
+            }
+            if(strcmp(tokens->items[i], "|") == 0)
+            {
+                pipe = true;
             }
         }
 
-if (io_redirection_checker == true) 
-{
-    io_redirection(tokens); 
-} 
+
+        if(IO == true)
+        {
+            io_redirection(tokens);
+        }
+        else if(pipe == true)
+        {
+            pip_execution(tokens);
+        }
+        else
+        {
+            char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
+
+
+            //Need an if else statement to check if the command exist or not.
+            if(commandPath)
+            {
+                execute_path(tokens);
+                free(commandPath);
+            }
+            else
+            {
+                printf("Command not found\n");
+            }
+        }
        
        free(input);
        free_tokens(tokens);
 
 
    }
-
-
    return 0;
 }
 
@@ -381,3 +382,89 @@ void io_redirection(tokenlist *tokens)
     free_tokens(commands);
 
 };
+/*This funtion for pipe execution has mutilple stages. The first part is the set up where if
+the user does not enter anything it will return nothing. The next part is separating the 
+commands(it has a similar process to the io_redirection funtion). Next I had to create the pipes;
+we have an array that store file descriptors for each pipe. The array stores 2 descriptors per pipe
+(reading and writing) for n-1 for n commands. Next, we set up forking and redirection. Lastly, we had
+to close all pipes and clean up the memory.*/
+void pip_execution(tokenlist * tokens)
+{
+    if(tokens->size == 0)
+    {
+        return;
+    }
+
+    int command_amount = 0;
+    tokenlist **commands = (tokenlist**) malloc(sizeof(tokenlist *) * tokens->size); //created a two d array in the heap.
+
+    tokenlist * the_command = new_tokenlist();
+    //separted the commands similar to the io_redirection function.
+    for(int i = 0; i < tokens->size; i++)
+    {
+        if(strcmp(tokens->items[i], "|") == 0)
+        {
+            commands[command_amount++] = the_command; //this will store the current command.
+            the_command = new_tokenlist(); // created a new tokenlist for the next command given.
+        }
+        else
+        {
+            add_token(the_command, tokens->items[i]); //This will add tokens to the current command.
+        }
+
+    }
+    commands[command_amount++] = the_command; //this will help add the last command.
+    
+    int file_directories_pipes[2 *(command_amount - 1)]; //from lecture notes: create pipes for (n-1) commands.
+
+    //This will create the pipe by using pipe()
+    for(int i = 0; i < command_amount - 1; i++)
+    {
+        if(pipe(file_directories_pipes + i * 2) < 0)
+        {
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    for(int i = 0; i < command_amount; i++)
+    {
+        int pid = fork();
+        if(pid == 0)
+        {
+            if(i > 0)
+            {
+                dup2(file_directories_pipes[(i - 1) *2], STDIN_FILENO); //getting the input from the previous pipe only if it is not the fist command.
+            }
+            if(i < command_amount - 1)
+            {
+                dup2(file_directories_pipes[i*2+1], STDOUT_FILENO); //outputting the next pipe as long as it is not the last command.
+               
+            }
+            for(int k = 0; k < 2*(command_amount - 1); k++)
+            {
+                close(file_directories_pipes[k]); //this will close all the file pip descriptors
+            }
+
+            execute_path(commands[i]);
+            exit(EXIT_SUCCESS);
+
+        }
+        else if(pid < 0)
+        {
+            exit(EXIT_FAILURE);
+        }
+    }
+    for(int i = 0; i < 2*(command_amount - 1); i++)
+    {
+        close(file_directories_pipes[i]); //This will close all the pipe file descriptors in the parent process.
+    }
+    for(int i = 0; i < command_amount; i++)
+    {
+        wait(NULL); //this will wait for the child processes to finish.
+    }
+    for(int i = 0; i < command_amount; i++)
+    {
+        free_tokens(commands[i]); //This will free all the allocated memory for commands.
+    }
+    free(commands);
+}
