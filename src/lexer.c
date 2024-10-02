@@ -5,47 +5,49 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+typedef struct
+{
+    int jobs_n;
+    int pid;
+    char *command;
+} background_struct;
 
+background_struct jobs[10];
+
+int job_counter = 0;
 
 void show_display();
 void env_vars(tokenlist *tokens);
 void tilde_exp(tokenlist *tokens);
 char *path_search(tokenlist *tokens);
-void execute_path(tokenlist *tokens);
+void execute_path(tokenlist *tokens, bool background_checker);
 void io_redirection(tokenlist *tokens);
 void pip_execution(tokenlist *tokens);
-void backgroundProcess(tokenlist *tokens);
-
-struct pidding{
-	int Pid;
-	char cmds[200];
-};
-
-struct pidding bg_list[10];
-
+bool background_checker(tokenlist *tokens);
+void backgorund();
 
 int main()
 {
-	// init pid = -1 for 10 slots in bg_list
-	
-	for(int i=0; i<=10; i++){
-		bg_list[i].Pid=-1; 
-	}
-
    while (1) {
+    
+    /*for(int i = 0; i < job_counter; i++)
+    {
+       int status;
+        int finish = waitpid(jobs[i].pid, &status, WNOHANG);
+        if(finish > 0)
+        {
+            printf("[%d] %s\n", jobs[i].jobs_n, jobs[i].command);
+            free(jobs[i].command);
+            for(int l = i; l < job_counter - 1; l++)
+            {
+                jobs[l] = jobs[l + 1];
+            }
 
-	int status; 
-
-		for (int i=0; i<10; i++) { //in 0 .. 10
-			if ((bg_list[i].Pid) != -1) {
-				waitpid((bg_list[i].Pid),&status,0);
-				if (WIFEXITED(status)) {
-					// print info of bg finished
-					bg_list[i].Pid = -1;
-				}
-			}
-		}
-
+            job_counter--;
+            i--;
+        }*/
+    
+   
        show_display();
        printf("> ");
        /* input contains the whole command
@@ -59,17 +61,13 @@ int main()
        for (int i = 0; i < tokens->size; i++) {
            printf("token %d: (%s)\n", i, tokens->items[i]);
        }
+        bool back = background_checker(tokens);
 
         bool IO = false; //this is a checker for io redirection
         bool pipe = false; //this is a checker for piping
-		bool bg= false;
 
         for(int i = 0; i < tokens->size;i++)
         {
-			if(strcmp(tokens->items[i], "&") == 0){
-				bg=true;
-			}
-            
             if(strcmp(tokens->items[i], "<") == 0)
             {
                 IO = true;
@@ -78,12 +76,12 @@ int main()
             {
                 pipe = true;
             }
-			
         }
-		 if(bg == true)
+        if(strcmp(tokens->items[0], "jobs") == 0)
         {
-            backgroundProcess(tokens);
+            backgorund();
         }
+
         if(IO == true)
         {
             io_redirection(tokens);
@@ -96,11 +94,10 @@ int main()
         {
             char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
 
-
             //Need an if else statement to check if the command exist or not.
             if(commandPath)
             {
-                execute_path(tokens);
+                execute_path(tokens, back); //tried this as tokens already
                 free(commandPath);
             }
             else
@@ -112,11 +109,9 @@ int main()
        free(input);
        free_tokens(tokens);
 
-
    }
    return 0;
 }
-
 
 char *get_input(void) {
    char *buffer = NULL;
@@ -141,7 +136,6 @@ char *get_input(void) {
    return buffer;
 }
 
-
 tokenlist *new_tokenlist(void) {
    tokenlist *tokens = (tokenlist *)malloc(sizeof(tokenlist));
    tokens->size = 0;
@@ -150,20 +144,16 @@ tokenlist *new_tokenlist(void) {
    return tokens;
 }
 
-
 void add_token(tokenlist *tokens, char *item) {
    int i = tokens->size;
-
 
    tokens->items = (char **)realloc(tokens->items, (i + 2) * sizeof(char *));
    tokens->items[i] = (char *)malloc(strlen(item) + 1);
    tokens->items[i + 1] = NULL;
    strcpy(tokens->items[i], item);
 
-
    tokens->size += 1;
 }
-
 
 tokenlist *get_tokens(char *input) {
    char *buf = (char *)malloc(strlen(input) + 1);
@@ -179,14 +169,12 @@ tokenlist *get_tokens(char *input) {
    return tokens;
 }
 
-
 void free_tokens(tokenlist *tokens) {
    for (int i = 0; i < tokens->size; i++)
        free(tokens->items[i]);
    free(tokens->items);
    free(tokens);
 }
-
 
 /*The point of this function is print the prompt of the on our terminal.
    -We created character pointers to point to the the get environment of user, machine, and current working directory.
@@ -199,7 +187,6 @@ void show_display()
    char * pwd = getenv("PWD");
    printf("%s@%s:%s",user,machine,pwd);
 }
-
 
 /*The point of this function is to expand the variable of a token whenever it receives input from the user.
    - In order to complete this we had to pass in the tokens based on the input.
@@ -214,7 +201,6 @@ void env_vars(tokenlist *tokens) {
            char *var_tokenName = tokens->items[i] + 1; //This will skip the first the character($)
            char *env_tokenValue = getenv(var_tokenName); //created a pointer that this pointing at the get enviornment of the token name.
 
-
            if (env_tokenValue != NULL)
            {
                free(tokens->items[i]); // This will free up the old space
@@ -228,7 +214,6 @@ void env_vars(tokenlist *tokens) {
 
 
 
-
 void tilde_exp(tokenlist *tokens)
 {
    char * home = getenv("HOME"); //Needed to set a home pointer to the environment of home.
@@ -236,21 +221,15 @@ void tilde_exp(tokenlist *tokens)
    {
        if(tokens->items[i][0] == '~') //checks if there is a tilde first.
        {
-          
-          
                char * tilde_expansion = malloc(strlen(home)+ strlen(tokens->items[i])); //create new space in the heap that will fit the home expression and the directories after that.
                strcpy(tilde_expansion,home);//copy over the home environment path to the tilde expression
                strcat(tilde_expansion, tokens->items[i]+1); //need to concatenate the rest of the string to the tilde expression.
                free(tokens->items[i]); //This will free this string space
                tokens->items[i] = tilde_expansion;//this will copy over the tilde expression plus other conetents to the items string at i completely..
        }
-
-
    }
 
-
 }
-
 
 /*For this function we needed to traverse through the $PATH command to search if a specific command when the token
 has an input */
@@ -267,10 +246,8 @@ char *path_search(tokenlist *tokens){
    strcpy(copiedPath, path);
    
 
-
    char *directory=strtok(copiedPath,":"); //":" will separate the path.
    char *fullPath= NULL;
-
 
 
 
@@ -289,7 +266,6 @@ char *path_search(tokenlist *tokens){
            strcat(fullPath, "/");
            strcat(fullPath, command);
 
-
        }
 
        // checks if the command exist and is an executable.
@@ -305,7 +281,6 @@ char *path_search(tokenlist *tokens){
        directory=strtok(NULL,":");
        }
 
-
    free(copiedPath);  //delete memory at the end of the search.
    return NULL; //This will show that command is not found.
    }
@@ -313,19 +288,15 @@ char *path_search(tokenlist *tokens){
 
 
 
-
-void execute_path(tokenlist *tokens){
-
+void execute_path(tokenlist *tokens, bool background_checker){
 
    char *fullPath= path_search(tokens);
    int status;
-
 
    pid_t pid = fork();
           
        if (pid==0){
           
-
 
            char *commands[tokens->size+1];
            for(int i= 0; i<tokens->size; i++){
@@ -335,15 +306,42 @@ void execute_path(tokenlist *tokens){
                commands[tokens->size]=NULL;
                execv(fullPath, commands);
 
+          
+       }else if(pid>0)
+       {
+            if (background_checker == true) {
+    // Ensure job_counter does not exceed jobs array size
+    if (job_counter >= 10) {
+        printf("Error: Maximum number of background jobs reached.\n");
+        return;
+    }
 
-          
-       }else if(pid>0){
-           waitpid(pid,&status,0);
-          
+    // Storing job number, PID, and command
+    jobs[job_counter].jobs_n = job_counter + 1;
+    jobs[job_counter].pid = pid;
+
+    jobs[job_counter].command = (char*)malloc(strlen(tokens->items[0]) + 1);
+    if (jobs[job_counter].command == NULL) {
+        return; 
+    }
+
+    // Copy the command string into the allocated memory
+    strcpy(jobs[job_counter].command, tokens->items[0]);
+
+    // Print the background job info
+    printf("[%d] %d\n", jobs[job_counter].jobs_n, pid);
+
+    // Increment the job counter
+    job_counter++;
+}
+
+            else
+            {
+            waitpid(pid,&status,0);
+            }
        }else{
            printf("Pid did not work");
        }
-
 
 
 
@@ -393,20 +391,19 @@ void io_redirection(tokenlist *tokens)
             dup2(file_directory_input, STDIN_FILENO); //redirection of input
             close(file_directory_input); //close input file descriptors
         }
-        
         if(out_flag == true)
         {
             int file_directory_input = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0600); //have create or overwrite and read/write permissions
             if(file_directory_input < 0)
             {
-                printf("Error: the input file does not exist\n");
+                printf("Error: the output file does not exist\n");
                 exit(EXIT_FAILURE); //exits if input file does not exist.
             }
             dup2(file_directory_input, STDOUT_FILENO); //redirection of output
             close(file_directory_input); //close input file descriptors
             
         }
-        execute_path(commands); //need to execute the command that is stored in the new token list
+        execute_path(commands, false); //need to execute the command that is stored in the new token list
         free_tokens(commands); //needs to free up the space.
         exit(EXIT_SUCCESS); //exits whenever the process is sucessful.
     }
@@ -431,10 +428,9 @@ void pip_execution(tokenlist * tokens)
     {
         return;
     }
-
+    int l = 0; //track the current number of commands
     int command_amount = 0;
     tokenlist **commands = (tokenlist**) malloc(sizeof(tokenlist *) * tokens->size); //created a two d array in the heap.
-
     tokenlist * the_command = new_tokenlist();
     //separted the commands similar to the io_redirection function.
     for(int i = 0; i < tokens->size; i++)
@@ -457,24 +453,23 @@ void pip_execution(tokenlist * tokens)
     //This will create the pipe by using pipe()
     for(int i = 0; i < command_amount - 1; i++)
     {
-        if(pipe(file_directories_pipes + i * 2) < 0)
+        if(pipe(file_directories_pipes + (i * 2)) < 0)
         {
             exit(EXIT_FAILURE);
         }
     }
-
-    for(int i = 0; i < command_amount; i++)
+    while( l < command_amount)
     {
         int pid = fork();
         if(pid == 0)
         {
-            if(i > 0)
+            if(l > 0)
             {
-                dup2(file_directories_pipes[(i - 1) *2], STDIN_FILENO); //getting the input from the previous pipe only if it is not the fist command.
+                dup2(file_directories_pipes[(l - 1) *2], STDIN_FILENO); //getting the input from the previous pipe only if it is not the fist command.
             }
-            if(i < command_amount - 1)
+            if(l < command_amount - 1)
             {
-                dup2(file_directories_pipes[i*2+1], STDOUT_FILENO); //outputting the next pipe as long as it is not the last command.
+                dup2(file_directories_pipes[l*2+1], STDOUT_FILENO); //outputting the next pipe as long as it is not the last command.
                
             }
             for(int k = 0; k < 2*(command_amount - 1); k++)
@@ -482,14 +477,15 @@ void pip_execution(tokenlist * tokens)
                 close(file_directories_pipes[k]); //this will close all the file pip descriptors
             }
 
-            execute_path(commands[i]);
+            execute_path(commands[l], false);
             exit(EXIT_SUCCESS);
 
         }
-        else if(pid < 0)
+        if(pid < 0)
         {
             exit(EXIT_FAILURE);
         }
+        l = l+1;
     }
     for(int i = 0; i < 2*(command_amount - 1); i++)
     {
@@ -503,42 +499,41 @@ void pip_execution(tokenlist * tokens)
     {
         free_tokens(commands[i]); //This will free all the allocated memory for commands.
     }
-    free(commands);
+    free(commands); 
 }
+bool background_checker(tokenlist *tokens)
+{
+    if(tokens->size > 0 && strcmp(tokens->items[tokens->size -1],"&") == 0)
+    {
+        free(tokens->items[tokens->size-1]);
+        tokens->items[tokens->size -1] = NULL;
+        tokens->size--;
+        return true;
+    }
+    return false;
+}
+void backgorund()
+{
+    /*int status;
+    for(int i = 0; i < job_counter; i++)
+    {
+       
+        int finish = waitpid(jobs[i].pid, &status, WNOHANG);
+        if(finish > 0)
+        {
+            printf("[%d] + done %s\n", jobs[i].jobs_n, jobs[i].command);
+            free(jobs[i].command);
+            for(int l = i; l < job_counter - 1; l++)
+            {
+                jobs[l] = jobs[l + 1];
+            }
 
-
-void backgroundProcess(tokenlist *tokens){
-	
-   char *fullPath= path_search(tokens);
-   int status;
-
-
-   pid_t pid = fork();
-        
-           char *commands[tokens->size+1];
-           for(int i= 0; i<tokens->size; i++){
-               commands[i]=tokens-> items[i];
-          
-               }
-
-       if (pid==0){
-          
-        
-               commands[tokens->size]=NULL;
-               execv(fullPath, commands);
-
-
-       }else if(pid>0){
-           waitpid(pid, &status, WNOHANG);
-		   for (int i=0; i<10; i++) {
-			if ((bg_list[i].Pid)==-1) {
-				bg_list[i].Pid = pid;
-				for(int j=0; j<tokens->size+1; j++)
-				strcat(bg_list[i].cmds, commands[j]);
-					break;
-			}
-		   }
-    
-       }
-	
-} 
+            job_counter--;
+            i--;
+        }
+        else if(finish == 0)
+        {
+            printf("[%d] + %d running %s\n", jobs[i].jobs_n, jobs[i].pid, jobs[i].command);
+        }
+    }*/
+}
