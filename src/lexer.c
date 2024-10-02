@@ -10,106 +10,38 @@
 void show_display();
 void env_vars(tokenlist *tokens);
 void tilde_exp(tokenlist *tokens);
-char *path_search(tokenlist *tokens);
-void execute_path(tokenlist *tokens);
-void io_redirection(tokenlist *tokens);
-void pip_execution(tokenlist *tokens);
-void backgroundProcess(tokenlist *tokens);
-
-struct pidding{
-	int Pid;
-	char cmds[200];
-};
-
-struct pidding bg_list[10];
-
-
 int main()
 {
-	// init pid = -1 for 10 slots in bg_list
-	
-	for(int i=0; i<=10; i++){
-		bg_list[i].Pid= -1; 
-	}
+	while (1) {
+		show_display();
 
-   while (1) {
+		printf("> ");
+		/* input contains the whole command
+		 * tokens contains substrings from input split by spaces
+		 */
 
-	int status; 
+		char *input = get_input();
+		printf("whole input: %s\n", input);
 
-		for (int i=0; i<10; i++) { //in 0 .. 10
-			if ((bg_list[i].Pid) != -1) {
-				waitpid((bg_list[i].Pid),&status,0);
-				if (WIFEXITED(status)) {
-					// print info of bg finished
-					bg_list[i].Pid = -1;
-				}
-			}
+		tokenlist *tokens = get_tokens(input);
+
+		env_vars(tokens);
+
+		tilde_exp(tokens);
+		for (int i = 0; i < tokens->size; i++) {
+			printf("token %d: (%s)\n", i, tokens->items[i]);
 		}
 
-       show_display();
-       printf("> ");
-       /* input contains the whole command
-        * tokens contains substrings from input split by spaces
-        */
-       char *input = get_input();
-       printf("whole input: %s\n", input);
-       tokenlist *tokens = get_tokens(input);
-       env_vars(tokens);
-       tilde_exp(tokens);
-       for (int i = 0; i < tokens->size; i++) {
-           printf("token %d: (%s)\n", i, tokens->items[i]);
-       }
+		char *commandPath= path_search(tokens);
 
-        bool IO = false; //this is a checker for io redirection
-        bool pipe = false; //this is a checker for piping
-		bool bg= false;
-
-        for(int i = 0; i < tokens->size;i++)
-        {
-			if(strcmp(tokens->items[i], "&") == 0){
-				bg=true;
-			}
-            if(strcmp(tokens->items[i], "<") == 0)
-            {
-                IO = true;
-            }
-            if(strcmp(tokens->items[i], "|") == 0)
-            {
-                pipe = true;
-            }
-			
-        }
-		 if(bg == true)
-        {
-            backgroundProcess(tokens);
-        }
-        if(IO == true)
-        {
-            io_redirection(tokens);
-        }
-        else if(pipe == true)
-        {
-            pip_execution(tokens);
-        }
-        else
-        {
-            char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
-
-
-            //Need an if else statement to check if the command exist or not.
-            if(commandPath)
-            {
-                execute_path(tokens);
-                free(commandPath);
-            }
-            else
-            {
-                printf("Command not found\n");
-            }
-        }
-       
-       free(input);
-       free_tokens(tokens);
+		if(commandPath){
+			printf("%s\n", commandPath);
+			free(commandPath);
+		}else{
+			printf("Command not found\n");
+		}
+		free(input);
+		free_tokens(tokens);
 
 
    }
@@ -304,240 +236,7 @@ char *path_search(tokenlist *tokens){
        directory=strtok(NULL,":");
        }
 
-
-   free(copiedPath);  //delete memory at the end of the search.
-   return NULL; //This will show that command is not found.
-   }
-  
-
-
-
-
-void execute_path(tokenlist *tokens){
-
-
-   char *fullPath= path_search(tokens);
-   int status;
-
-
-   pid_t pid = fork();
-          
-       if (pid==0){
-          
-
-
-           char *commands[tokens->size+1];
-           for(int i= 0; i<tokens->size; i++){
-               commands[i]=tokens-> items[i];
-          
-               }
-               commands[tokens->size]=NULL;
-               execv(fullPath, commands);
-
-
-          
-       }else if(pid>0){
-           waitpid(pid,&status,0);
-          
-       }else{
-           printf("Pid did not work");
-       }
-
-
-
-
-free(fullPath);
-}
-void io_redirection(tokenlist *tokens)
-{
-    if(tokens -> size == 0)
-    {
-        return;
-    }
-    bool in_flag = false;
-    bool out_flag = false;
-    char * input_file = NULL;
-    char * output_file = NULL;
-    tokenlist * commands =  new_tokenlist();
-
-    for(int i = 0; i < tokens->size; i++) //traverse through tokens
-    {
-        if(strcmp(tokens->items[i],"<" )== 0) // check if there is an input symbol
-        {
-            in_flag = true; //set flag to true
-            input_file = tokens->items[++i]; //input pointer will point the input file
-        }
-        else if(strcmp(tokens->items[i],">")== 0) //check if there is an output symbol
-        {
-            out_flag = true; //set flag to true
-            output_file = tokens->items[++i]; //output pointer will point the output file
-        }
-        else
-        {
-            add_token(commands, tokens->items[i]); //add commands to a separate token list.
-        }
-    }
-
-    int pid = fork();
-    if(pid == 0)
-    {
-        if(in_flag == true)
-        {
-            int file_directory_input = open(input_file, O_RDONLY);
-            if(file_directory_input < 0)
-            {
-                printf("Error: the input file does not exist\n");
-                exit(EXIT_FAILURE); //exits if input file does not exist.
-            }
-            dup2(file_directory_input, STDIN_FILENO); //redirection of input
-            close(file_directory_input); //close input file descriptors
-        }
-
-        if(out_flag == true)
-        {
-            int file_directory_input = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0600); //have create or overwrite and read/write permissions
-            if(file_directory_input < 0)
-            {
-                printf("Error: the input file does not exist\n");
-                exit(EXIT_FAILURE); //exits if input file does not exist.
-            }
-            dup2(file_directory_input, STDOUT_FILENO); //redirection of output
-            close(file_directory_input); //close input file descriptors
-            
-        }
-        execute_path(commands); //need to execute the command that is stored in the new token list
-        free_tokens(commands); //needs to free up the space.
-        exit(EXIT_SUCCESS); //exits whenever the process is sucessful.
-    }
-    
-    else if(pid > 0)
-    {
-        waitpid(pid,NULL,0);
-    }
-
-    free_tokens(commands);
-
-};
-/*This funtion for pipe execution has mutilple stages. The first part is the set up where if
-the user does not enter anything it will return nothing. The next part is separating the 
-commands(it has a similar process to the io_redirection funtion). Next I had to create the pipes;
-we have an array that store file descriptors for each pipe. The array stores 2 descriptors per pipe
-(reading and writing) for n-1 for n commands. Next, we set up forking and redirection. Lastly, we had
-to close all pipes and clean up the memory.*/
-void pip_execution(tokenlist * tokens)
-{
-    if(tokens->size == 0)
-    {
-        return;
-    }
-
-    int command_amount = 0;
-    tokenlist **commands = (tokenlist**) malloc(sizeof(tokenlist *) * tokens->size); //created a two d array in the heap.
-
-    tokenlist * the_command = new_tokenlist();
-    //separted the commands similar to the io_redirection function.
-    for(int i = 0; i < tokens->size; i++)
-    {
-        if(strcmp(tokens->items[i], "|") == 0)
-        {
-            commands[command_amount++] = the_command; //this will store the current command.
-            the_command = new_tokenlist(); // created a new tokenlist for the next command given.
-        }
-        else
-        {
-            add_token(the_command, tokens->items[i]); //This will add tokens to the current command.
-        }
-
-    }
-    commands[command_amount++] = the_command; //this will help add the last command.
-    
-    int file_directories_pipes[2 *(command_amount - 1)]; //from lecture notes: create pipes for (n-1) commands.
-
-    //This will create the pipe by using pipe()
-    for(int i = 0; i < command_amount - 1; i++)
-    {
-        if(pipe(file_directories_pipes + i * 2) < 0)
-        {
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    for(int i = 0; i < command_amount; i++)
-    {
-        int pid = fork();
-        if(pid == 0)
-        {
-            if(i > 0)
-            {
-                dup2(file_directories_pipes[(i - 1) *2], STDIN_FILENO); //getting the input from the previous pipe only if it is not the fist command.
-            }
-            if(i < command_amount - 1)
-            {
-                dup2(file_directories_pipes[i*2+1], STDOUT_FILENO); //outputting the next pipe as long as it is not the last command.
-               
-            }
-            for(int k = 0; k < 2*(command_amount - 1); k++)
-            {
-                close(file_directories_pipes[k]); //this will close all the file pip descriptors
-            }
-
-            execute_path(commands[i]);
-            exit(EXIT_SUCCESS);
-
-        }
-        else if(pid < 0)
-        {
-            exit(EXIT_FAILURE);
-        }
-    }
-    for(int i = 0; i < 2*(command_amount - 1); i++)
-    {
-        close(file_directories_pipes[i]); //This will close all the pipe file descriptors in the parent process.
-    }
-    for(int i = 0; i < command_amount; i++)
-    {
-        wait(NULL); //this will wait for the child processes to finish.
-    }
-    for(int i = 0; i < command_amount; i++)
-    {
-        free_tokens(commands[i]); //This will free all the allocated memory for commands.
-    }
-    free(commands);
-}
-
-
-void backgroundProcess(tokenlist *tokens){
+	free(copiedPath);
+	return NULL;
+	}
 	
-   char *fullPath= path_search(tokens);
-   int status;
-
-
-   pid_t pid = fork();
-        
-           char *commands[tokens->size+1];
-           for(int i= 0; i<tokens->size; i++){
-               commands[i]=tokens-> items[i];
-          
-               }
-
-       if (pid==0){
-          
-               commands[tokens->size]=NULL;
-               execv(fullPath, commands);
-
-
-       }else if(pid>0){
-           waitpid(pid, &status, WNOHANG);
-		   for (int i=0; i<10; i++) {
-			if ((bg_list[i].Pid)==-1) {
-				bg_list[i].Pid = pid;
-				for(int j=0; j<tokens->size+1; j++)
-				
-                strcat(bg_list[i].cmds, commands[j]);
-					break;
-			}
-		   }
-    
-       }
-	
-}
