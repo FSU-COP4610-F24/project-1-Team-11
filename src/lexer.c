@@ -14,7 +14,6 @@ char *path_search(tokenlist *tokens);
 void execute_path(tokenlist *tokens);
 void io_redirection(tokenlist *tokens);
 void pip_execution(tokenlist *tokens);
-<<<<<<< HEAD
 void backgroundProcess(tokenlist *tokens);
 
 struct pidding{
@@ -30,7 +29,7 @@ int main()
 	// init pid = -1 for 10 slots in bg_list
 	
 	for(int i=0; i<=10; i++){
-		bg_list[i].Pid= -1; 
+		bg_list[i].Pid=-1; 
 	}
 
    while (1) {
@@ -70,31 +69,7 @@ int main()
 			if(strcmp(tokens->items[i], "&") == 0){
 				bg=true;
 			}
-=======
-
-int main()
-{
-   while (1) {
-       show_display();
-       printf("> ");
-       /* input contains the whole command
-        * tokens contains substrings from input split by spaces
-        */
-       char *input = get_input();
-       printf("whole input: %s\n", input);
-       tokenlist *tokens = get_tokens(input);
-       env_vars(tokens);
-       tilde_exp(tokens);
-       for (int i = 0; i < tokens->size; i++) {
-           printf("token %d: (%s)\n", i, tokens->items[i]);
-       }
-
-        bool IO = false; //this is a checker for io redirection
-        bool pipe = false; //this is a checker for piping
-
-        for(int i = 0; i < tokens->size;i++)
-        {
->>>>>>> 5f462afb549577b24900258f5282f3051cd27558
+            
             if(strcmp(tokens->items[i], "<") == 0)
             {
                 IO = true;
@@ -102,7 +77,6 @@ int main()
             if(strcmp(tokens->items[i], "|") == 0)
             {
                 pipe = true;
-<<<<<<< HEAD
             }
 			
         }
@@ -134,36 +108,6 @@ int main()
                 printf("Command not found\n");
             }
         }
-=======
-            }
-        }
-
-
-        if(IO == true)
-        {
-            io_redirection(tokens);
-        }
-        else if(pipe == true)
-        {
-            pip_execution(tokens);
-        }
-        else
-        {
-            char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
-
-
-            //Need an if else statement to check if the command exist or not.
-            if(commandPath)
-            {
-                execute_path(tokens);
-                free(commandPath);
-            }
-            else
-            {
-                printf("Command not found\n");
-            }
-        }
->>>>>>> 5f462afb549577b24900258f5282f3051cd27558
        
        free(input);
        free_tokens(tokens);
@@ -449,12 +393,8 @@ void io_redirection(tokenlist *tokens)
             dup2(file_directory_input, STDIN_FILENO); //redirection of input
             close(file_directory_input); //close input file descriptors
         }
-<<<<<<< HEAD
-
+        
         if(out_flag == true)
-=======
-        else if(out_flag == true)
->>>>>>> 5f462afb549577b24900258f5282f3051cd27558
         {
             int file_directory_input = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0600); //have create or overwrite and read/write permissions
             if(file_directory_input < 0)
@@ -564,7 +504,6 @@ void pip_execution(tokenlist * tokens)
         free_tokens(commands[i]); //This will free all the allocated memory for commands.
     }
     free(commands);
-<<<<<<< HEAD
 }
 
 
@@ -584,6 +523,7 @@ void backgroundProcess(tokenlist *tokens){
 
        if (pid==0){
           
+        
                commands[tokens->size]=NULL;
                execv(fullPath, commands);
 
@@ -594,14 +534,11 @@ void backgroundProcess(tokenlist *tokens){
 			if ((bg_list[i].Pid)==-1) {
 				bg_list[i].Pid = pid;
 				for(int j=0; j<tokens->size+1; j++)
-				
-                strcat(bg_list[i].cmds, commands[j]);
+				strcat(bg_list[i].cmds, commands[j]);
 					break;
 			}
 		   }
     
        }
 	
-=======
->>>>>>> 5f462afb549577b24900258f5282f3051cd27558
-}
+} 
