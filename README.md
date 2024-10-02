@@ -23,7 +23,7 @@
 
 ### Part 4: $PATH Search
 - **Responsibilities**: [Create a function that will search certain commands if it exist or not]
-- **Assigned to**: Donald Walton
+- **Assigned to**: Donald Walton, Bela Terra
 
 ### Part 5: External Command Execution
 - **Responsibilities**: [Create a function that will process and output external commands and child processes.]
@@ -45,9 +45,6 @@
 - **Responsibilities**: [Create a function that will help with internal commands such as jobs, cd, and exit]
 - **Assigned  nm kk,l,.l0;89liukhj b  jknm n to**: Isabela Terra, James Tanner
 
-### Part 10: External Timeout Executable
-- **Responsibilities**: [There is no part 10. I think it is extra credit]
-- **Assigned to**: 
 
 ### Extra Credit
 - **Responsibilities**: [Create a function that will help improve unlimited piping, suppot piping and io redirection on one single command line, and execute shell within a running shell]
