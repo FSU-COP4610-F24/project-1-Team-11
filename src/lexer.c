@@ -28,26 +28,57 @@ void backgorund();
 
 int main()
 {
-	// init pid = -1 for 10 slots in bg_list
+<<<<<<< HEAD
+	// init pid = -1 for 10 slots in bg_list chdir for path
+    // cd
+    //chdir
+    //sret
 	
-	for(int i=0; i<=10; i++){
+	for(int i=0; i<10; i++){
 		bg_list[i].Pid=-1; 
 	}
 
+=======
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
    while (1) {
+    
+    /*for(int i = 0; i < job_counter; i++)
+    {
+       int status;
+        int finish = waitpid(jobs[i].pid, &status, WNOHANG);
+        if(finish > 0)
+        {
+            printf("[%d] %s\n", jobs[i].jobs_n, jobs[i].command);
+            free(jobs[i].command);
+            for(int l = i; l < job_counter - 1; l++)
+            {
+                jobs[l] = jobs[l + 1];
+            }
 
-	int status; 
+<<<<<<< HEAD
+	
 
 		for (int i=0; i<10; i++) { //in 0 .. 10
 			if ((bg_list[i].Pid) != -1) {
-				waitpid((bg_list[i].Pid),&status,0);
+                int status; 
+				waitpid((bg_list[i].Pid),&status,WNOHANG);
 				if (WIFEXITED(status)) {
 					// print info of bg finished
+                    printf("finished: pid: %d, cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
 					bg_list[i].Pid = -1;
+                    
 				}
 			}
 		}
 
+
+=======
+            job_counter--;
+            i--;
+        }*/
+    
+   
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
        show_display();
        printf("> ");
        /* input contains the whole command
@@ -68,11 +99,15 @@ int main()
 
         for(int i = 0; i < tokens->size;i++)
         {
+<<<<<<< HEAD
 			if(strcmp(tokens->items[i], "&") == 0){
 				bg=true;
 			}
             
+            if(strcmp(tokens->items[i], "<") == 0 || strcmp(tokens->items[i], ">") == 0 )
+=======
             if(strcmp(tokens->items[i], "<") == 0)
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
             {
                 IO = true;
             }
@@ -81,11 +116,35 @@ int main()
                 pipe = true;
             }
         }
+<<<<<<< HEAD
+
+
+        
 		 if(bg == true)
         {
-            backgroundProcess(tokens);
+             char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
+
+
+            //Need an if else statement to check if the command exist or not.
+            if(commandPath)
+            {
+                backgroundProcess(tokens);
+                free(commandPath);
+            }
+            else
+            {
+                printf("Command not found\n");
+            }
         }
+       else if(IO == true)
+=======
+        if(strcmp(tokens->items[0], "jobs") == 0)
+        {
+            backgorund();
+        }
+
         if(IO == true)
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
         {
             io_redirection(tokens);
         }
@@ -292,9 +351,15 @@ char *path_search(tokenlist *tokens){
 
 
 
+<<<<<<< HEAD
 
 void execute_path(tokenlist *tokens){
-
+if (tokens->size==0){
+    return;
+}
+=======
+void execute_path(tokenlist *tokens, bool background_checker){
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
 
    char *fullPath= path_search(tokens);
    int status;
@@ -507,40 +572,100 @@ void pip_execution(tokenlist * tokens)
     }
     free(commands); 
 }
+bool background_checker(tokenlist *tokens)
+{
+    if(tokens->size > 0 && strcmp(tokens->items[tokens->size -1],"&") == 0)
+    {
+        free(tokens->items[tokens->size-1]);
+        tokens->items[tokens->size -1] = NULL;
+        tokens->size--;
+        return true;
+    }
+    return false;
+}
+void backgorund()
+{
+    /*int status;
+    for(int i = 0; i < job_counter; i++)
+    {
+       
+        int finish = waitpid(jobs[i].pid, &status, WNOHANG);
+        if(finish > 0)
+        {
+            printf("[%d] + done %s\n", jobs[i].jobs_n, jobs[i].command);
+            free(jobs[i].command);
+            for(int l = i; l < job_counter - 1; l++)
+            {
+                jobs[l] = jobs[l + 1];
+            }
+
+<<<<<<< HEAD
 
 
-void backgroundProcess(tokenlist *tokens){
-	
-   char *fullPath= path_search(tokens);
-   int status;
-
-
-   pid_t pid = fork();
-        
-           char *commands[tokens->size+1];
-           for(int i= 0; i<tokens->size; i++){
-               commands[i]=tokens-> items[i];
-          
-               }
-
-       if (pid==0){
-          
-        
-               commands[tokens->size]=NULL;
-               execv(fullPath, commands);
-
-
-       }else if(pid>0){
-           waitpid(pid, &status, WNOHANG);
-		   for (int i=0; i<10; i++) {
-			if ((bg_list[i].Pid)==-1) {
-				bg_list[i].Pid = pid;
-				for(int j=0; j<tokens->size+1; j++)
-				strcat(bg_list[i].cmds, commands[j]);
-					break;
-			}
-		   }
+void backgroundProcess(tokenlist *tokens) {
     
-       }
-	
-} 
+
+    char *fullPath = path_search(tokens);
+    int status; 
+    
+    if (!fullPath) {
+        //printf("Command not found\n");
+        return;
+    }
+
+    // Check if the last token is '&' and remove it
+    if (strcmp(tokens->items[tokens->size - 1], "&") == 0) {
+        tokens->size--;  // Ignore '&' for command execution
+    }
+
+    pid_t pid = fork();
+
+    
+    char *commands[tokens->size + 1];
+    for (int i = 0; i < tokens->size; i++) {
+        commands[i] = tokens->items[i];
+        printf("Token %d: %s\n", i, commands[i]);
+    }
+    commands[tokens->size] = NULL;
+
+    if (pid == 0) {  // Child process
+        // commands[0] = fullPath;
+        
+        
+        execv(fullPath, commands);
+        printf("execv failed!");
+        exit(0);
+
+        
+    } else if (pid > 0) {  // Parent process
+        waitpid(pid, &status, WNOHANG);
+
+        for (int i = 0; i < 10; i++) {
+            if (bg_list[i].Pid == -1) {
+                bg_list[i].Pid = pid;
+                bg_list[i].cmds[0] = '\0';  // Reset command string
+
+                
+                for (int j = 0; j < tokens->size; j++) {
+                    strcat(bg_list[i].cmds, commands[j]);
+                    printf("%s ", commands[j]);
+                }
+                printf("\n");
+                break;
+            }
+        }
+        printf("end of bg func\n");
+    }
+}
+
+=======
+            job_counter--;
+            i--;
+        }
+        else if(finish == 0)
+        {
+            printf("[%d] + %d running %s\n", jobs[i].jobs_n, jobs[i].pid, jobs[i].command);
+        }
+    }*/
+}
+>>>>>>> 6d6abf9903c85d93084b8d81cf6d958bc327a717
