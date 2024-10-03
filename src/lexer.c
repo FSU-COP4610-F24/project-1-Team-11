@@ -31,6 +31,7 @@ int main()
     // cd
     //chdir
     //sret
+
 	
 	for(int i=0; i<10; i++){
 		bg_list[i].Pid=-1; 
@@ -38,7 +39,7 @@ int main()
 
    while (1) {
 
-	
+
 
 		for (int i=0; i<10; i++) { //in 0 .. 10
 			if ((bg_list[i].Pid) != -1) {
@@ -52,6 +53,8 @@ int main()
 				}
 			}
 		}
+
+    
 
 
        show_display();
@@ -583,13 +586,11 @@ void backgroundProcess(tokenlist *tokens) {
                 
                 for (int j = 0; j < tokens->size; j++) {
                     strcat(bg_list[i].cmds, commands[j]);
-                    printf("%s ", commands[j]);
                 }
                 printf("\n");
                 break;
             }
         }
-        printf("end of bg func\n");
     }
 }
 
