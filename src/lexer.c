@@ -16,6 +16,7 @@ void io_redirection(tokenlist *tokens);
 void pip_execution(tokenlist *tokens);
 void backgroundProcess(tokenlist *tokens);
 void pipebg_execution(tokenlist *tokens);
+void cd_path(tokenlist *tokens);
 
 struct pidding{
 	int Pid;
@@ -93,7 +94,11 @@ int main()
         }
 
 
-        if(bg && pipe){
+        if (strcmp(tokens->items[0], "cd") == 0)
+        {
+            cd_path(tokens);
+        }
+        else if(bg && pipe){
             pipebg_execution(tokens);
 
         }
@@ -673,4 +678,41 @@ void pipebg_execution(tokenlist * tokens)
         free_tokens(commands[i]); //This will free all the allocated memory for commands.
     }
     free(commands);
+}
+
+
+
+
+void cd_path(tokenlist *tokens)
+{
+    // with 0 arg change to home
+    if (tokens->size == 1)
+    {
+        char *home = getenv("HOME");
+        if (home == NULL)
+        {
+            printf("Home enviroment not set. \n");
+        }
+        else if (chdir(home) != 0)
+        {
+            perror("Error changing home directory. \n");
+        }
+        return;
+    }
+
+    //error if more than one arg
+    if (tokens->size > 2)
+    {
+        printf("Too many arguments. \n");
+        return;
+    }
+
+    //with 1 arg need valid directory to move to
+    char *path = tokens->items[1];
+    if (chdir(path) != 0)
+    {
+        perror("Error switching to directory. \n");
+    }
+
+
 }
