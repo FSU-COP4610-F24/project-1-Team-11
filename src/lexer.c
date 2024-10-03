@@ -26,25 +26,32 @@ struct pidding bg_list[10];
 
 int main()
 {
-	// init pid = -1 for 10 slots in bg_list
+	// init pid = -1 for 10 slots in bg_list chdir for path
+    // cd
+    //chdir
+    //sret
 	
-	for(int i=0; i<=10; i++){
+	for(int i=0; i<10; i++){
 		bg_list[i].Pid=-1; 
 	}
 
    while (1) {
 
-	int status; 
+	
 
 		for (int i=0; i<10; i++) { //in 0 .. 10
 			if ((bg_list[i].Pid) != -1) {
-				waitpid((bg_list[i].Pid),&status,0);
+                int status; 
+				waitpid((bg_list[i].Pid),&status,WNOHANG);
 				if (WIFEXITED(status)) {
 					// print info of bg finished
+                    printf("finished: pid: %d, cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
 					bg_list[i].Pid = -1;
+                    
 				}
 			}
 		}
+
 
        show_display();
        printf("> ");
@@ -70,7 +77,7 @@ int main()
 				bg=true;
 			}
             
-            if(strcmp(tokens->items[i], "<") == 0)
+            if(strcmp(tokens->items[i], "<") == 0 || strcmp(tokens->items[i], ">") == 0 )
             {
                 IO = true;
             }
@@ -80,11 +87,26 @@ int main()
             }
 			
         }
+
+
+        
 		 if(bg == true)
         {
-            backgroundProcess(tokens);
+             char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
+
+
+            //Need an if else statement to check if the command exist or not.
+            if(commandPath)
+            {
+                backgroundProcess(tokens);
+                free(commandPath);
+            }
+            else
+            {
+                printf("Command not found\n");
+            }
         }
-        if(IO == true)
+       else if(IO == true)
         {
             io_redirection(tokens);
         }
@@ -92,6 +114,7 @@ int main()
         {
             pip_execution(tokens);
         }
+        
         else
         {
             char *commandPath= path_search(tokens); //Need a pointer to point to the path search.
@@ -315,7 +338,9 @@ char *path_search(tokenlist *tokens){
 
 
 void execute_path(tokenlist *tokens){
-
+if (tokens->size==0){
+    return;
+}
 
    char *fullPath= path_search(tokens);
    int status;
@@ -507,38 +532,60 @@ void pip_execution(tokenlist * tokens)
 }
 
 
-void backgroundProcess(tokenlist *tokens){
-	
-   char *fullPath= path_search(tokens);
-   int status;
 
-
-   pid_t pid = fork();
-        
-           char *commands[tokens->size+1];
-           for(int i= 0; i<tokens->size; i++){
-               commands[i]=tokens-> items[i];
-          
-               }
-
-       if (pid==0){
-          
-        
-               commands[tokens->size]=NULL;
-               execv(fullPath, commands);
-
-
-       }else if(pid>0){
-           waitpid(pid, &status, WNOHANG);
-		   for (int i=0; i<10; i++) {
-			if ((bg_list[i].Pid)==-1) {
-				bg_list[i].Pid = pid;
-				for(int j=0; j<tokens->size+1; j++)
-				strcat(bg_list[i].cmds, commands[j]);
-					break;
-			}
-		   }
+void backgroundProcess(tokenlist *tokens) {
     
-       }
-	
-} 
+
+    char *fullPath = path_search(tokens);
+    int status; 
+    
+    if (!fullPath) {
+        //printf("Command not found\n");
+        return;
+    }
+
+    // Check if the last token is '&' and remove it
+    if (strcmp(tokens->items[tokens->size - 1], "&") == 0) {
+        tokens->size--;  // Ignore '&' for command execution
+    }
+
+    pid_t pid = fork();
+
+    
+    char *commands[tokens->size + 1];
+    for (int i = 0; i < tokens->size; i++) {
+        commands[i] = tokens->items[i];
+        printf("Token %d: %s\n", i, commands[i]);
+    }
+    commands[tokens->size] = NULL;
+
+    if (pid == 0) {  // Child process
+        // commands[0] = fullPath;
+        
+        
+        execv(fullPath, commands);
+        printf("execv failed!");
+        exit(0);
+
+        
+    } else if (pid > 0) {  // Parent process
+        waitpid(pid, &status, WNOHANG);
+
+        for (int i = 0; i < 10; i++) {
+            if (bg_list[i].Pid == -1) {
+                bg_list[i].Pid = pid;
+                bg_list[i].cmds[0] = '\0';  // Reset command string
+
+                
+                for (int j = 0; j < tokens->size; j++) {
+                    strcat(bg_list[i].cmds, commands[j]);
+                    printf("%s ", commands[j]);
+                }
+                printf("\n");
+                break;
+            }
+        }
+        printf("end of bg func\n");
+    }
+}
+
