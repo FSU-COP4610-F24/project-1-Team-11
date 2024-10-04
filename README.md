@@ -23,7 +23,7 @@
 
 ### Part 4: $PATH Search
 - **Responsibilities**: [Create a function that will search certain commands if it exist or not]
-- **Assigned to**: Donald Walton, Bela Terra
+- **Assigned to**: Donald Walton, Isabela Terra
 
 ### Part 5: External Command Execution
 - **Responsibilities**: [Create a function that will process and output external commands and child processes.]
@@ -35,7 +35,7 @@
 
 ### Part 7: Piping
 - **Responsibilities**: [Create a funtion that will implement piping and all the aspects of piping.]
-- **Assigned to**: James Tanner
+- **Assigned to**: James Tanner, Donald Walton
 
 ### Part 8: Background Processing
 - **Responsibilities**: [Create a function that will implement background that is composed of both piping and IO redirection]
@@ -43,7 +43,7 @@
 
 ### Part 9: Internal Command Execution
 - **Responsibilities**: [Create a function that will help with internal commands such as jobs, cd, and exit]
-- **Assigned  nm kk,l,.l0;89liukhj b  jknm n to**: Isabela Terra, James Tanner
+- **Assigned**: Isabela Terra, James Tanner, Donald Walton
 
 
 ### Extra Credit

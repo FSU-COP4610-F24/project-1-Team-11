@@ -29,10 +29,7 @@ struct pidding bg_list[10];
 
 int main()
 {
-	// init pid = -1 for 10 slots in bg_list chdir for path
-    // cd
-    //chdir
-    //sret
+	
 
 	
 	for(int i=0; i<10; i++){
@@ -58,7 +55,7 @@ int main()
                 }
 				else if (WIFEXITED(status) || WIFSIGNALED(status)) {
 					// print info of bg finished
-                    printf("finished: pid: %d \n cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
+                    printf("finished: pid: %d  cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
 					bg_list[i].Pid = -1;
                     
 				}
@@ -563,7 +560,7 @@ void backgroundProcess(tokenlist *tokens) {
     
 
     char *fullPath = path_search(tokens);
-    int status; 
+    
     
     if (!fullPath) {
         printf("Command not found\n");
