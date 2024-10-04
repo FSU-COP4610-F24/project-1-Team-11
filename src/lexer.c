@@ -17,6 +17,7 @@ void pip_execution(tokenlist *tokens);
 void backgroundProcess(tokenlist *tokens);
 void pipebg_execution(tokenlist *tokens);
 void cd_path(tokenlist *tokens);
+void jobs();
 
 struct pidding{
 	int Pid;
@@ -44,9 +45,18 @@ int main()
 
 		for (int i=0; i<10; i++) { //in 0 .. 10
 			if ((bg_list[i].Pid) != -1) {
-                int status; 
-				waitpid((bg_list[i].Pid),&status,WNOHANG);
-				if (WIFEXITED(status)) {
+                int status;
+                 
+				pid_t result = waitpid(bg_list[i].Pid, &status, WNOHANG);
+                if (result == 0) {
+                // The process is still running, do nothing
+                continue;
+                } 
+                else if (result == -1) {
+                // Error occurred, print an error message
+                perror("waitpid failed");
+                }
+				else if (WIFEXITED(status) || WIFSIGNALED(status)) {
 					// print info of bg finished
                     printf("finished: pid: %d \n cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
 					bg_list[i].Pid = -1;
@@ -97,6 +107,10 @@ int main()
         if (strcmp(tokens->items[0], "cd") == 0)
         {
             cd_path(tokens);
+        }
+        else if ((strcmp(tokens->items[0], "jobs") == 0))
+        {
+            jobs();
         }
         else if(bg && pipe){
             pipebg_execution(tokens);
@@ -564,16 +578,16 @@ void backgroundProcess(tokenlist *tokens) {
     pid_t pid = fork();
 
     
-    char *commands[tokens->size + 1];
-    for (int i = 0; i < tokens->size; i++) {
-        commands[i] = tokens->items[i];
-        printf("Token %d: %s\n", i, commands[i]);
-    }
-    commands[tokens->size] = NULL;
-
+    
     if (pid == 0) {  // Child process
         // commands[0] = fullPath;
-        
+        char *commands[tokens->size + 1];
+        for (int i = 0; i < tokens->size; i++) {
+            commands[i] = tokens->items[i];
+            printf("Token %d: %s\n", i, commands[i]);
+        }
+    commands[tokens->size] = NULL;
+
         
         execv(fullPath, commands);
         printf("execv failed!");
@@ -581,7 +595,7 @@ void backgroundProcess(tokenlist *tokens) {
 
         
     } else if (pid > 0) {  // Parent process
-        waitpid(pid, &status, WNOHANG);
+        
 
         for (int i = 0; i < 10; i++) {
             if (bg_list[i].Pid == -1) {
@@ -590,7 +604,11 @@ void backgroundProcess(tokenlist *tokens) {
 
                 
                 for (int j = 0; j < tokens->size; j++) {
-                    strcat(bg_list[i].cmds, commands[j]);
+                    strcat(bg_list[i].cmds, tokens->items[j]);
+                    if (j < tokens->size -1)
+                    {
+                        strcat(bg_list[i].cmds, " ");
+                    }
                 }
                 printf("\n");
                 break;
@@ -714,5 +732,23 @@ void cd_path(tokenlist *tokens)
         perror("Error switching to directory. \n");
     }
 
+
+}
+
+void jobs()
+{
+    bool active_jobs = false; 
+
+    for (int i = 0; i < 10; i++) {
+        if (bg_list[i].Pid != -1) {  
+            active_jobs = true;
+            printf("[%d]+ [%d] %s\n", i + 1, bg_list[i].Pid, bg_list[i].cmds);
+        }
+    }
+
+    if (!active_jobs)
+    {
+        printf("No active background processes. \n");
+    }
 
 }
