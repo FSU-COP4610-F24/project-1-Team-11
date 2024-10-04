@@ -100,8 +100,11 @@ int main()
 			
         }
 
-
-        if (strcmp(tokens->items[0], "cd") == 0)
+        if(strcmp(tokens->items[0], "exit") == 0){
+            exit(0);
+        }
+        
+        else if (strcmp(tokens->items[0], "cd") == 0)
         {
             cd_path(tokens);
         }
