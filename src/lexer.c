@@ -43,8 +43,9 @@ int main()
 		for (int i=0; i<10; i++) { //in 0 .. 10
 			if ((bg_list[i].Pid) != -1) {
                 int status;
-                 
+                
 				pid_t result = waitpid(bg_list[i].Pid, &status, WNOHANG);
+
                 if (result == 0) {
                 // The process is still running, do nothing
                 continue;
@@ -55,7 +56,7 @@ int main()
                 }
 				else if (WIFEXITED(status) || WIFSIGNALED(status)) {
 					// print info of bg finished
-                    printf("finished: pid: %d  cmd: %s\n", bg_list[i].Pid , bg_list[i].cmds);
+                    printf("job[%d]: done [cmd: %s]\n", i + 1, bg_list[i].cmds);
 					bg_list[i].Pid = -1;
                     
 				}
@@ -610,7 +611,8 @@ void backgroundProcess(tokenlist *tokens) {
                         strcat(bg_list[i].cmds, " ");
                     }
                 }
-                printf("\n");
+                printf("[%d] %d\n", i + 1, pid);
+                
                 break;
             }
         }
